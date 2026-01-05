@@ -6,7 +6,7 @@ This server exposes 4 tools:
 3. verify_claims - Embedding-based citation matching
 4. generate_images - Gemini Imagen API
 
-Run with: python mcp/server.py
+Run with: python brandguard_mcp/server.py
 Or connect via Claude Desktop / Claude Agent SDK
 """
 

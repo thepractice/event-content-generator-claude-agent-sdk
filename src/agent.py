@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 
 # Try to import Claude Agent SDK, fall back to direct API
 try:
-    from claude_agent_sdk import query, ClaudeAgentOptions, HookMatcher
+    from claude_agent_sdk import query, ClaudeAgentOptions
     USING_SDK = True
 except ImportError:
     USING_SDK = False
@@ -184,7 +184,7 @@ async def run_brandguard_sdk(event_brief: Dict[str, Any]) -> Dict[str, Any]:
         mcp_servers={
             "brandguard": {
                 "command": "python",
-                "args": ["mcp/server.py"],
+                "args": ["brandguard_mcp/server.py"],
             }
         },
 
@@ -360,7 +360,7 @@ Begin by retrieving context from the knowledge base."""
 
 def execute_tool(tool_name: str, tool_input: Dict[str, Any]) -> Any:
     """Execute a tool and return the result."""
-    from mcp.server import retrieve_context, critique_draft, verify_claims, generate_images
+    from brandguard_mcp.server import retrieve_context, critique_draft, verify_claims, generate_images
 
     if tool_name == "retrieve_context":
         return retrieve_context(
