@@ -72,8 +72,8 @@ async def run_with_guardrails(event_brief: Dict[str, Any]) -> Dict[str, Any]:
             flags.append(f"iteration_{iteration}_agent_failed")
             continue
 
-        # Get the output
-        output = result.get("result")
+        # Get the output (agent saves to saved_bundle or we load from file)
+        output = result.get("saved_bundle")
         if output is None:
             # Try to load from file
             output = _load_output_from_file()
