@@ -411,6 +411,50 @@ def generate_images(
 
 
 # ============================================================================
+# Tool 5: save_output
+# ============================================================================
+
+@mcp.tool()
+def save_output(
+    event_title: str,
+    content: dict,
+    scorecard: dict,
+    claims_table: list,
+    images: Optional[dict] = None
+) -> dict:
+    """Save the final content bundle to output/bundle.json.
+
+    Args:
+        event_title: The event title
+        content: Dict with content per channel, each having headline, body, cta
+        scorecard: Dict with quality scores per channel
+        claims_table: List of claim verification results
+        images: Optional dict with image paths per channel
+
+    Returns:
+        Success status and path to saved file.
+    """
+    from datetime import datetime
+
+    output = {
+        "event_title": event_title,
+        "generated_at": datetime.now().isoformat(),
+        "content": content,
+        "scorecard": scorecard,
+        "claims_table": claims_table,
+        "images": images or {},
+    }
+
+    output_path = Path("output/bundle.json")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "w") as f:
+        json.dump(output, f, indent=2)
+
+    return {"success": True, "path": str(output_path)}
+
+
+# ============================================================================
 # Main Entry Point
 # ============================================================================
 

@@ -408,8 +408,8 @@ SAMPLE_EVENTS = [
         "description": "Join our expert panel to learn practical strategies for implementing Zero Trust architecture in your organization. We'll cover identity verification, micro-segmentation, and continuous monitoring.",
         "date": date(2026, 2, 15),
         "audience": "IT Security professionals, CISOs, and Security Architects",
-        "messages": "Zero Trust is essential for modern security\nImplementation doesn't have to be complex\nReal-world case studies from Fortune 500 companies",
-        "channels": ["linkedin", "email"],
+        "messages": "Zero Trust is essential for modern security\nImplementation doesn't have to be complex",
+        "channels": ["linkedin"],  # Single channel for faster testing
         "urls": "Register Now | https://example.com/zerotrust-webinar"
     },
     {
@@ -417,17 +417,17 @@ SAMPLE_EVENTS = [
         "description": "The premier event for AI practitioners. Two days of hands-on workshops, keynotes from industry leaders, and networking opportunities with the AI community.",
         "date": date(2026, 3, 20),
         "audience": "Data Scientists, ML Engineers, and AI Product Managers",
-        "messages": "Learn from top AI researchers\nHands-on workshops with real datasets\nNetwork with 500+ AI practitioners",
-        "channels": ["linkedin", "facebook", "email", "web"],
-        "urls": "Get Tickets | https://example.com/ai-summit\nView Agenda | https://example.com/ai-summit/agenda"
+        "messages": "Learn from top AI researchers\nHands-on workshops with real datasets",
+        "channels": ["linkedin"],  # Single channel for faster testing
+        "urls": "Get Tickets | https://example.com/ai-summit"
     },
     {
         "title": "Cloud Migration Masterclass",
         "description": "A comprehensive workshop on migrating legacy applications to the cloud. Learn best practices for AWS, Azure, and GCP migrations with minimal downtime.",
         "date": date(2026, 4, 10),
         "audience": "DevOps Engineers, Cloud Architects, and IT Managers",
-        "messages": "Reduce migration risk by 80%\nHands-on labs with real infrastructure\nGet certified in cloud migration",
-        "channels": ["linkedin", "email", "web"],
+        "messages": "Reduce migration risk\nHands-on labs with real infrastructure",
+        "channels": ["linkedin"],  # Single channel for faster testing
         "urls": "Enroll Now | https://example.com/cloud-masterclass"
     }
 ]
@@ -574,7 +574,7 @@ def main():
         channels = st.multiselect(
             "Marketing Channels",
             options=["linkedin", "facebook", "email", "web"],
-            default=sample.get("channels", ["linkedin", "email"]),
+            default=sample.get("channels", ["linkedin"]),  # Default to just 1 channel
             format_func=lambda x: {"linkedin": "💼 LinkedIn", "facebook": "📘 Facebook", "email": "✉️ Email", "web": "🌐 Web"}[x]
         )
 

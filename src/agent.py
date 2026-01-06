@@ -222,17 +222,16 @@ async def run_brandguard(event_brief: Dict[str, Any]) -> Dict[str, Any]:
 # ============================================================================
 
 if __name__ == "__main__":
-    # Sample event brief for testing
+    # Sample event brief for testing (single channel for faster iteration)
     event_brief = {
         "event_title": "Zero Trust Security Webinar",
         "event_description": "Learn how to implement Zero Trust architecture in your organization.",
         "event_date": "2026-02-15",
         "target_audience": "IT Security professionals and CISOs",
         "key_messages": [
-            "Zero Trust is essential for modern security",
-            "Implementation doesn't have to be complex"
+            "Zero Trust is essential for modern security"
         ],
-        "channels": ["linkedin", "email"],
+        "channels": ["linkedin"],  # Single channel for faster testing
         "relevant_urls": [
             {"label": "Register", "url": "https://example.com/register"}
         ]

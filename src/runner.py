@@ -27,7 +27,7 @@ from .schemas import (
 
 
 # Maximum iterations before giving up
-MAX_ITERATIONS = 3
+MAX_ITERATIONS = 2
 
 
 async def run_with_guardrails(event_brief: Dict[str, Any]) -> Dict[str, Any]:
@@ -303,17 +303,16 @@ if __name__ == "__main__":
         for obs in analysis.get("observations", []):
             print(f"  - {obs}")
     else:
-        # Run the agent
+        # Run the agent (single channel for faster testing)
         event_brief = {
             "event_title": "Zero Trust Security Webinar",
             "event_description": "Learn how to implement Zero Trust architecture in your organization.",
             "event_date": "2026-02-15",
             "target_audience": "IT Security professionals and CISOs",
             "key_messages": [
-                "Zero Trust is essential for modern security",
-                "Implementation doesn't have to be complex"
+                "Zero Trust is essential for modern security"
             ],
-            "channels": ["linkedin", "email"],
+            "channels": ["linkedin"],  # Single channel for faster testing
             "relevant_urls": [
                 {"label": "Register", "url": "https://example.com/register"}
             ]
