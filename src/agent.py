@@ -101,7 +101,7 @@ Begin by retrieving brand voice and product context."""
 # Agent Execution
 # ============================================================================
 
-async def run_brandguard(event_brief: Dict[str, Any]) -> Dict[str, Any]:
+async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = None) -> Dict[str, Any]:
     """Run the BrandGuard agent using Claude Agent SDK.
 
     This follows the official SDK quickstart pattern:
@@ -156,6 +156,13 @@ async def run_brandguard(event_brief: Dict[str, Any]) -> Dict[str, Any]:
     text_output = []
     tool_calls = []
 
+    # Helper to notify progress
+    def notify(event_type: str, data: dict):
+        if on_progress:
+            on_progress(event_type, data)
+
+    notify("started", {"event_title": event_brief.get("event_title", "")})
+
     try:
         # Agentic loop: streams messages as Claude works
         async for message in query(prompt=prompt, options=options):
@@ -171,6 +178,8 @@ async def run_brandguard(event_brief: Dict[str, Any]) -> Dict[str, Any]:
                             "content": block.text[:500],
                             "timestamp": datetime.now().isoformat(),
                         })
+                        notify("reasoning", {"text": block.text[:200]})
+
                     elif hasattr(block, "name"):
                         # Tool being called
                         tool_name = block.name
@@ -183,14 +192,17 @@ async def run_brandguard(event_brief: Dict[str, Any]) -> Dict[str, Any]:
                             "tool": tool_name,
                             "timestamp": datetime.now().isoformat(),
                         })
+                        notify("tool_call", {"tool": tool_name})
 
             elif isinstance(message, ResultMessage):
                 # Final result
                 print(f"Done: {message.subtype}")
                 audit_log["completed_at"] = datetime.now().isoformat()
+                notify("completed", {"subtype": getattr(message, "subtype", "success")})
 
     except Exception as e:
         audit_log["completed_at"] = datetime.now().isoformat()
+        notify("error", {"message": str(e)})
         return {
             "success": False,
             "error": str(e),

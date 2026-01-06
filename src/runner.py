@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .agent import run_brandguard, audit_log
+from .agent import run_brandguard, audit_log, get_audit_log
 from .schemas import (
     validate_output_schema,
     has_unverified_claims,
@@ -30,7 +30,7 @@ from .schemas import (
 MAX_ITERATIONS = 2
 
 
-async def run_with_guardrails(event_brief: Dict[str, Any]) -> Dict[str, Any]:
+async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable = None) -> Dict[str, Any]:
     """Run the BrandGuard agent with host-level invariant enforcement.
 
     This function wraps the agent execution and ensures:
@@ -53,9 +53,13 @@ async def run_with_guardrails(event_brief: Dict[str, Any]) -> Dict[str, Any]:
         print(f"Iteration {iteration + 1}/{MAX_ITERATIONS}")
         print(f"{'='*60}")
 
+        # Notify iteration start
+        if on_progress:
+            on_progress("iteration_start", {"iteration": iteration + 1, "max": MAX_ITERATIONS})
+
         # Run the agent
         try:
-            result = await run_brandguard(event_brief)
+            result = await run_brandguard(event_brief, on_progress=on_progress)
         except Exception as e:
             flags.append(f"iteration_{iteration}_error: {str(e)}")
             continue

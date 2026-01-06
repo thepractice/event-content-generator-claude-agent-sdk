@@ -477,9 +477,43 @@ def parse_urls(urls_text: str) -> list[dict]:
     return urls
 
 
-async def generate_content(event_brief: dict) -> dict:
+def create_progress_callback(status_container):
+    """Create a callback that updates the Streamlit status container."""
+    tool_sequence = []
+    step_count = [0]  # Use list to allow mutation in closure
+
+    def on_progress(event_type: str, data: dict):
+        if event_type == "iteration_start":
+            status_container.write(f"### Iteration {data['iteration']}/{data['max']}")
+        elif event_type == "started":
+            status_container.write(f"🚀 Starting: {data.get('event_title', 'Event')}")
+        elif event_type == "tool_call":
+            tool_name = data.get("tool", "unknown")
+            # Format tool name nicely
+            display_name = tool_name.replace("mcp__brandguard__", "").replace("_", " ").title()
+            tool_sequence.append(display_name)
+            step_count[0] += 1
+            status_container.write(f"**Step {step_count[0]}:** 🔧 {display_name}")
+        elif event_type == "reasoning":
+            text = data.get("text", "")[:100]
+            if text and len(text) > 20:
+                # Only show substantial reasoning
+                status_container.write(f"💭 _{text}..._")
+        elif event_type == "completed":
+            status_container.write("✅ **Agent completed successfully**")
+        elif event_type == "error":
+            status_container.write(f"❌ Error: {data.get('message', 'Unknown error')}")
+
+    return on_progress, tool_sequence
+
+
+async def generate_content(event_brief: dict, status_container=None) -> dict:
     """Run the agent and return results."""
-    return await run_with_guardrails(event_brief)
+    if status_container:
+        on_progress, _ = create_progress_callback(status_container)
+        return await run_with_guardrails(event_brief, on_progress=on_progress)
+    else:
+        return await run_with_guardrails(event_brief)
 
 
 # ============================================================================
@@ -603,13 +637,16 @@ def main():
                 "relevant_urls": parse_urls(urls_text)
             }
 
-            with st.spinner("🤖 Agent is generating content..."):
+            # Use st.status for realtime updates
+            with st.status("🤖 Agent is working...", expanded=True) as status:
                 try:
-                    # Run the async function
-                    result = asyncio.run(generate_content(event_brief))
+                    # Run the async function with progress callback
+                    result = asyncio.run(generate_content(event_brief, status_container=status))
+                    status.update(label="✅ Generation complete!", state="complete", expanded=False)
                     st.session_state.result = result
                     st.rerun()
                 except Exception as e:
+                    status.update(label="❌ Generation failed", state="error")
                     st.error(f"Error: {str(e)}")
 
     # ========================================================================
