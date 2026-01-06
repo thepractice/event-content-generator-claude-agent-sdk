@@ -167,10 +167,24 @@ Document your observations in `findings.md`!
 
 | Aspect | LangGraph | Claude Agent SDK |
 |--------|-----------|------------------|
-| Flow control | Explicit graph nodes | Agent decides |
-| Tools | Python functions | MCP server |
-| Iteration | Explicit loop in graph | Agent reasons |
-| Observability | LangSmith traces | Hooks + audit log |
+| **Workflow** | Explicit graph (nodes + edges) | Emergent (agent decides) |
+| **Decision Making** | `should_continue()` function | Claude's reasoning |
+| **Tools** | Python functions in nodes | MCP server (subprocess) |
+| **Iteration** | Counter + conditional edge | Agent decides + host caps |
+| **State** | TypedDict passed between nodes | Agent manages internally |
+| **Observability** | LangSmith traces | Audit log + tool calls |
+
+### Key Insight
+
+**LangGraph**: "Tell the system what to do" - You define every node and edge explicitly. The graph executes deterministically.
+
+**Claude Agent SDK**: "Tell the agent what to achieve" - You provide skills (domain knowledge) and tools (capabilities). The agent reasons about what to do.
+
+For detailed comparison, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Documentation
+
+- [Architecture & Comparison](docs/ARCHITECTURE.md) - Deep dive into how the agent works and comparison with LangGraph
 
 ## License
 
