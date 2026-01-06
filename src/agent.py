@@ -158,6 +158,9 @@ async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = No
                 "args": [str(mcp_server_path)],
                 "env": {
                     "PYTHONPATH": str(project_dir),
+                    # Pass API keys to MCP subprocess for image generation
+                    "GEMINI_API_KEY": os.environ.get("GEMINI_API_KEY", ""),
+                    "GOOGLE_API_KEY": os.environ.get("GOOGLE_API_KEY", ""),
                 }
             }
         },

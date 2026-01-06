@@ -339,68 +339,77 @@ def _find_quoted_span(claim: str, source_text: str, min_words: int = 3) -> Optio
 def generate_images(
     channels: list[str],
     event_title: str,
+    target_audience: str = "professionals",
     visual_style: str = "modern, professional, corporate photography"
 ) -> dict:
-    """Generate marketing visuals for each channel using Gemini Imagen.
+    """Generate marketing visuals for each channel using Gemini.
 
     Args:
         channels: List of channels needing images (e.g., ["linkedin", "email"])
         event_title: The event title to incorporate in the image
+        target_audience: Who the event is for (for better image context)
         visual_style: Style guidance for image generation
 
     Returns:
         Dict mapping channel to image path (or None if generation failed)
     """
     try:
-        import google.generativeai as genai
+        from google import genai
     except ImportError:
-        return {channel: None for channel in channels}
+        return {channel: None for channel in channels} | {"error": "google-genai not installed"}
 
-    api_key = os.environ.get("GEMINI_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         return {
             channel: None for channel in channels
         } | {"error": "GEMINI_API_KEY not set"}
 
-    genai.configure(api_key=api_key)
+    # Create client using the newer google.genai SDK
+    client = genai.Client(api_key=api_key)
 
     # Create output directory
     output_dir = Path("output/images")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Channel-specific style adjustments
+    # Channel-specific style adjustments (same as LangGraph version)
     channel_styles = {
-        "linkedin": "professional corporate photography, clean design, business context",
-        "facebook": "engaging social media graphic, vibrant, approachable",
-        "email": "clean header image, simple, professional",
-        "web": "hero banner, modern, high-impact visual",
+        "linkedin": "Professional corporate photography, clean modern design, business atmosphere",
+        "facebook": "Vibrant engaging social media graphic, eye-catching colors, dynamic composition",
+        "email": "Clean professional header image, minimalist design, elegant typography space",
+        "web": "Hero banner photography, high-impact visual, cinematic quality",
     }
 
     images = {}
     for channel in channels:
         try:
-            # Build prompt
-            channel_style = channel_styles.get(channel, visual_style)
+            # Build channel-specific prompt (matching LangGraph version)
+            style = channel_styles.get(channel, "Professional marketing visual")
             prompt = (
-                f"Marketing image for {channel} social media post about: {event_title}. "
-                f"Style: {channel_style}. {visual_style}. "
-                f"No text in image. High quality, professional."
+                f"{style}, representing a professional event titled \"{event_title}\" "
+                f"for {target_audience}, high-quality professional photography, "
+                f"no text or words in the image, 16:9 aspect ratio, modern aesthetic, "
+                f"soft professional lighting, corporate color palette"
             )
 
-            # Generate image
-            model = genai.ImageGenerationModel("imagen-3.0-generate-001")
-            response = model.generate_images(
-                prompt=prompt,
-                number_of_images=1,
-                aspect_ratio="16:9" if channel in ["linkedin", "web"] else "1:1",
+            # Generate image using Gemini 2.5 Flash (same as LangGraph version)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash-image",
+                contents=[prompt],
             )
 
-            # Save image
-            if response.images:
-                path = output_dir / f"{channel}.png"
-                response.images[0]._pil_image.save(str(path), format="PNG")
-                images[channel] = str(path)
-            else:
+            # Extract image from response parts
+            image_saved = False
+            for part in response.parts:
+                if part.inline_data is not None:
+                    # Save raw image bytes
+                    path = output_dir / f"{channel}.png"
+                    with open(path, "wb") as f:
+                        f.write(part.inline_data.data)
+                    images[channel] = str(path)
+                    image_saved = True
+                    break
+
+            if not image_saved:
                 images[channel] = None
 
         except Exception as e:
