@@ -64,6 +64,11 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
             flags.append(f"iteration_{iteration}_error: {str(e)}")
             continue
 
+        # Helper to notify progress
+        def notify(event_type: str, data: dict):
+            if on_progress:
+                on_progress(event_type, data)
+
         # Save audit log for this iteration
         all_audit_logs.append({
             "iteration": iteration + 1,
@@ -74,6 +79,7 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
         # Check if agent reported success
         if not result.get("success"):
             flags.append(f"iteration_{iteration}_agent_failed")
+            notify("validation", {"status": "failed", "reason": "Agent reported failure"})
             continue
 
         # Get the output (agent saves to saved_bundle or we load from file)
@@ -84,6 +90,7 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
 
         if output is None:
             flags.append(f"iteration_{iteration}_no_output")
+            notify("validation", {"status": "failed", "reason": "No output bundle found"})
             continue
 
         best_result = output
@@ -92,6 +99,7 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
         if not validate_output_schema(output):
             flags.append(f"iteration_{iteration}_schema_invalid")
             print("Schema validation failed - will retry")
+            notify("validation", {"status": "failed", "reason": "Schema validation failed - will retry"})
             continue
 
         # Verify no unverified claims (host enforcement)
@@ -99,6 +107,11 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
             unverified = _get_unverified_claims(output)
             flags.append(f"iteration_{iteration}_unverified_claims: {len(unverified)}")
             print(f"Found {len(unverified)} unverified claims - will retry")
+            notify("validation", {
+                "status": "retry",
+                "reason": f"Found {len(unverified)} unverified claims - will retry",
+                "unverified_claims": unverified[:3]  # Show first 3
+            })
 
             # Update the event brief to request claim fixes
             event_brief = _add_feedback_to_brief(event_brief, unverified)
@@ -106,6 +119,7 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
 
         # All invariants passed!
         print("\nAll invariants passed!")
+        notify("validation", {"status": "passed", "reason": "All quality checks passed"})
 
         # Save final audit log
         _save_audit_log(all_audit_logs, flags, success=True)
@@ -121,6 +135,11 @@ async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable
     # Max iterations reached - export best effort
     print(f"\nMax iterations ({MAX_ITERATIONS}) reached - exporting best effort")
     flags.append("max_iterations_reached")
+    if on_progress:
+        on_progress("validation", {
+            "status": "failed",
+            "reason": f"Max iterations ({MAX_ITERATIONS}) reached - exporting best effort"
+        })
 
     # Add warning flags to the best result
     if best_result:

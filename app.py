@@ -477,40 +477,59 @@ def parse_urls(urls_text: str) -> list[dict]:
     return urls
 
 
-def create_progress_callback(status_container):
-    """Create a callback that updates the Streamlit status container."""
-    tool_sequence = []
+def create_progress_callback(status_container, progress_log: list):
+    """Create a callback that updates the Streamlit status container and logs to list."""
     step_count = [0]  # Use list to allow mutation in closure
+
+    def log_and_write(message: str, icon: str = ""):
+        """Log to both the status container and the persistent log."""
+        full_message = f"{icon} {message}" if icon else message
+        status_container.write(full_message)
+        progress_log.append({"message": message, "icon": icon})
 
     def on_progress(event_type: str, data: dict):
         if event_type == "iteration_start":
-            status_container.write(f"### Iteration {data['iteration']}/{data['max']}")
+            log_and_write(f"**Iteration {data['iteration']}/{data['max']}**", "🔄")
         elif event_type == "started":
-            status_container.write(f"🚀 Starting: {data.get('event_title', 'Event')}")
+            log_and_write(f"Starting: {data.get('event_title', 'Event')}", "🚀")
         elif event_type == "tool_call":
             tool_name = data.get("tool", "unknown")
             # Format tool name nicely
             display_name = tool_name.replace("mcp__brandguard__", "").replace("_", " ").title()
-            tool_sequence.append(display_name)
             step_count[0] += 1
-            status_container.write(f"**Step {step_count[0]}:** 🔧 {display_name}")
+            log_and_write(f"**Step {step_count[0]}:** {display_name}", "🔧")
         elif event_type == "reasoning":
-            text = data.get("text", "")[:100]
-            if text and len(text) > 20:
-                # Only show substantial reasoning
-                status_container.write(f"💭 _{text}..._")
+            # Show more of the reasoning text
+            text = data.get("text", "")
+            if text and len(text) > 30:
+                # Show up to 300 chars of reasoning
+                display_text = text[:300] + "..." if len(text) > 300 else text
+                log_and_write(f"_{display_text}_", "💭")
         elif event_type == "completed":
-            status_container.write("✅ **Agent completed successfully**")
+            log_and_write("**Agent completed**", "✅")
         elif event_type == "error":
-            status_container.write(f"❌ Error: {data.get('message', 'Unknown error')}")
+            log_and_write(f"**Error:** {data.get('message', 'Unknown error')}", "❌")
+        elif event_type == "validation":
+            status = data.get("status", "")
+            reason = data.get("reason", "")
+            if status == "passed":
+                log_and_write(f"**{reason}**", "✅")
+            elif status == "retry":
+                log_and_write(f"**{reason}**", "⚠️")
+                # Show unverified claims if present
+                claims = data.get("unverified_claims", [])
+                for claim in claims[:3]:
+                    log_and_write(f"  • {claim[:80]}...", "")
+            elif status == "failed":
+                log_and_write(f"**{reason}**", "❌")
 
-    return on_progress, tool_sequence
+    return on_progress
 
 
-async def generate_content(event_brief: dict, status_container=None) -> dict:
+async def generate_content(event_brief: dict, status_container=None, progress_log: list = None) -> dict:
     """Run the agent and return results."""
-    if status_container:
-        on_progress, _ = create_progress_callback(status_container)
+    if status_container and progress_log is not None:
+        on_progress = create_progress_callback(status_container, progress_log)
         return await run_with_guardrails(event_brief, on_progress=on_progress)
     else:
         return await run_with_guardrails(event_brief)
@@ -537,6 +556,8 @@ def main():
         st.session_state.result = None
     if "sample_data" not in st.session_state:
         st.session_state.sample_data = None
+    if "progress_log" not in st.session_state:
+        st.session_state.progress_log = []
 
     # Two-column layout
     col_input, col_output = st.columns([1, 1.5], gap="large")
@@ -637,11 +658,15 @@ def main():
                 "relevant_urls": parse_urls(urls_text)
             }
 
+            # Clear previous progress log
+            st.session_state.progress_log = []
+            progress_log = st.session_state.progress_log
+
             # Use st.status for realtime updates
             with st.status("🤖 Agent is working...", expanded=True) as status:
                 try:
                     # Run the async function with progress callback
-                    result = asyncio.run(generate_content(event_brief, status_container=status))
+                    result = asyncio.run(generate_content(event_brief, status_container=status, progress_log=progress_log))
                     status.update(label="✅ Generation complete!", state="complete", expanded=False)
                     st.session_state.result = result
                     st.rerun()
@@ -826,6 +851,19 @@ def main():
                                     </div>
                                 </div>
                                 """, unsafe_allow_html=True)
+
+            # Progress Log section (persistent)
+            progress_log = st.session_state.get("progress_log", [])
+            if progress_log:
+                st.markdown("---")
+                with st.expander("📜 Agent Progress Log", expanded=True):
+                    for entry in progress_log:
+                        icon = entry.get("icon", "")
+                        message = entry.get("message", "")
+                        if icon:
+                            st.markdown(f"{icon} {message}")
+                        else:
+                            st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{message}")
 
             # Agent observability section
             st.markdown("---")
