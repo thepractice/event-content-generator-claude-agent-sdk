@@ -114,6 +114,14 @@ async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = No
     prompt = format_prompt(event_brief)
     project_dir = Path(__file__).parent.parent.resolve()
 
+    # Detect available skills
+    skills_dir = project_dir / ".claude" / "skills"
+    available_skills = []
+    if skills_dir.exists():
+        for skill_path in skills_dir.iterdir():
+            if skill_path.is_dir() and (skill_path / "SKILL.md").exists():
+                available_skills.append(skill_path.name)
+
     # Path to MCP server
     mcp_server_path = project_dir / "brandguard_mcp" / "server.py"
 
@@ -139,6 +147,9 @@ async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = No
         # Working directory
         cwd=str(project_dir),
 
+        # Load project settings including skills from .claude/skills/
+        setting_sources=["project"],
+
         # Connect to our MCP server (stdio pattern)
         mcp_servers={
             "brandguard": {
@@ -162,6 +173,11 @@ async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = No
             on_progress(event_type, data)
 
     notify("started", {"event_title": event_brief.get("event_title", "")})
+
+    # Notify about loaded skills and add to audit log
+    if available_skills:
+        notify("skills_loaded", {"skills": available_skills})
+        audit_log["skills_loaded"] = available_skills
 
     try:
         # Agentic loop: streams messages as Claude works

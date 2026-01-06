@@ -492,6 +492,11 @@ def create_progress_callback(status_container, progress_log: list):
             log_and_write(f"**Iteration {data['iteration']}/{data['max']}**", "🔄")
         elif event_type == "started":
             log_and_write(f"Starting: {data.get('event_title', 'Event')}", "🚀")
+        elif event_type == "skills_loaded":
+            skills = data.get("skills", [])
+            if skills:
+                skills_str = ", ".join(skills)
+                log_and_write(f"Skills loaded: {skills_str}", "📚")
         elif event_type == "tool_call":
             tool_name = data.get("tool", "unknown")
             # Format tool name nicely
