@@ -2,6 +2,13 @@
 .env
 .env.local
 
+# Local Claude settings (user-specific)
+.claude/settings.local.json
+
+# Debug logs
+*.log
+firebase-debug.log
+
 # Python
 __pycache__/
 *.py[cod]
