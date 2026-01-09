@@ -61,3 +61,15 @@ Save all outputs to the `output/` directory:
 - All factual claims must be grounded in retrieved corpus documents
 - If quality scores are below 7, revise and re-critique
 - Maximum 3 iteration cycles before exporting best effort
+
+## Development Guidelines
+
+When working on this codebase:
+
+1. **Act autonomously** - Take initiative, don't wait for permission on obvious improvements
+2. **Be thorough** - Check all edge cases, test changes, verify everything works
+3. **Test your changes** - Run the app, verify imports, check for errors
+4. **Think hard** - Consider implications, dependencies, and downstream effects
+5. **Improve continuously** - If you see something that can be better, fix it
+6. **Document changes** - Update README, docstrings, and comments as needed
+7. **Commit incrementally** - Make logical commits with clear messages

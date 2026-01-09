@@ -15,7 +15,7 @@ An autonomous marketing content generator built with the **Claude Agent SDK** us
 │   └── verification                   └── generate_images           │
 │                                                                     │
 │   HOOKS                              HOST RUNNER                    │
-│   ├── PreToolUse (guard)             ├── Max 3 iterations          │
+│   ├── PreToolUse (guard)             ├── Max iterations            │
 │   └── PostToolUse (audit)            └── Schema validation         │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
@@ -138,7 +138,7 @@ event-content-generator-claude-agent-sdk/
 ### Host Enforcement
 
 The host runner doesn't trust the agent to self-terminate:
-- **Max 3 iterations** - Prevents infinite loops
+- **Max iterations** - Prevents infinite loops (configurable via `MAX_ITERATIONS`)
 - **Schema validation** - Ensures output format is correct
 - **Claim verification** - Double-checks no unverified claims
 
@@ -182,9 +182,47 @@ Document your observations in `findings.md`!
 
 For detailed comparison, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Testing
+
+Run the unit tests:
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test class
+pytest tests/test_components.py::TestCritiqueDraft -v
+```
+
+Tests cover:
+- MCP tools (critique_draft, verify_claims)
+- Pydantic schemas and validation
+- RAG retrieval functionality
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Yes | API key for Claude Agent SDK |
+| `GEMINI_API_KEY` | No | API key for image generation |
+| `CLAUDE_MODEL` | No | Model to use (default: `claude-sonnet-4-20250514`) |
+
+### Model Options
+
+```bash
+# Use Sonnet (default - faster, cheaper)
+export CLAUDE_MODEL=claude-sonnet-4-20250514
+
+# Use Opus (more capable, slower)
+export CLAUDE_MODEL=claude-opus-4-5-20250514
+```
+
 ## Documentation
 
 - [Architecture & Comparison](docs/ARCHITECTURE.md) - Deep dive into how the agent works and comparison with LangGraph
+- [Findings](findings.md) - Learnings from building and testing the agent
 
 ## License
 

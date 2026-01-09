@@ -1,7 +1,7 @@
 """BrandGuard Host Runner - Invariant enforcement layer.
 
 This module provides the outer loop that enforces invariants:
-- Maximum 3 iterations
+- Maximum iterations (configurable via MAX_ITERATIONS)
 - Schema validation
 - No unverified claims
 
@@ -13,7 +13,7 @@ import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from .agent import run_brandguard, audit_log, get_audit_log
 from .schemas import (
@@ -30,19 +30,24 @@ from .schemas import (
 MAX_ITERATIONS = 2
 
 
-async def run_with_guardrails(event_brief: Dict[str, Any], on_progress: callable = None) -> Dict[str, Any]:
+async def run_with_guardrails(
+    event_brief: Dict[str, Any],
+    on_progress: Optional[Callable[[str, Dict[str, Any]], None]] = None
+) -> Dict[str, Any]:
     """Run the BrandGuard agent with host-level invariant enforcement.
 
     This function wraps the agent execution and ensures:
-    1. Maximum 3 iteration cycles
+    1. Maximum iteration cycles (MAX_ITERATIONS)
     2. Output matches expected schema
     3. No unverified claims in final output
 
     Args:
         event_brief: The event details to generate content for
+        on_progress: Optional callback for progress updates.
+                     Called with (event_type, data) for each progress event.
 
     Returns:
-        RunnerResult with success status, result, and flags
+        Dict with success status, result, iterations, flags, and audit_log
     """
     best_result = None
     flags = []
