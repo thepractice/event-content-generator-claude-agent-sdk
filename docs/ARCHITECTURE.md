@@ -2,6 +2,19 @@
 
 This document describes the architecture of the BrandGuard autonomous marketing agent built with the Claude Agent SDK, and compares it to the LangGraph version.
 
+## The Core Distinction: Orchestrated vs Autonomous
+
+| Frame | LangGraph | Claude Agent SDK |
+|-------|-----------|------------------|
+| **Orchestrated vs Autonomous** | You orchestrate the workflow | Agent decides the workflow |
+| **Explicit vs Emergent** | You define the graph | Workflow emerges from reasoning |
+| **Procedural vs Goal-oriented** | "Do these steps" | "Achieve this goal" |
+| **Deterministic vs Adaptive** | Same input → same path | May vary based on context |
+
+**The one-liner:** LangGraph defines **how**. Agent SDK defines **what**.
+
+**Who decides the workflow?** That's the fundamental question. With LangGraph, you do. With Agent SDK, the agent does.
+
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
@@ -9,6 +22,7 @@ This document describes the architecture of the BrandGuard autonomous marketing 
 3. [Key Components](#key-components)
 4. [Comparison: Claude Agent SDK vs LangGraph](#comparison-claude-agent-sdk-vs-langgraph)
 5. [When to Use Each Approach](#when-to-use-each-approach)
+6. [Future Trajectory](#future-trajectory)
 
 ---
 
@@ -375,3 +389,48 @@ Observations:
 The Claude Agent SDK approach treats the agent as a **capable colleague** who understands the domain and can make decisions. The LangGraph approach treats the workflow as a **state machine** where every transition is explicitly programmed.
 
 Both are valid. Choose based on your needs for control vs. flexibility.
+
+---
+
+## Future Trajectory
+
+### The Long-Term Bet
+
+As AI capabilities improve, the calculus shifts:
+
+| Timeframe | Better Choice | Why |
+|-----------|--------------|-----|
+| **Today** | LangGraph (for defined workflows) | More reliable, predictable, observable |
+| **Near future** | Parity | AI reliability improves |
+| **Further out** | Agent SDK | AI optimizes better than static graphs |
+
+### Why Agent SDK Wins Long-Term
+
+Today's arguments for LangGraph:
+- AI reasoning is expensive (tokens, latency)
+- AI sometimes doesn't follow instructions
+- We need predictability for business users
+
+But these are **temporary limitations**, not fundamental truths.
+
+When AI becomes significantly smarter:
+1. **Dynamic workflow optimization**: The agent realizes "for THIS event type, I should do deeper research first"
+2. **Emergent strategies**: The agent discovers approaches humans wouldn't think to graph
+3. **Self-improvement**: The agent learns from past runs what works best
+4. **The graph becomes a ceiling**: If the AI is smarter than the human who drew the graph, the graph limits potential
+
+### The Analogy
+
+- **LangGraph** = Detailed instructions for a junior developer (guardrails prevent mistakes)
+- **Agent SDK** = Goals for a senior developer (autonomy finds better solutions)
+
+You give juniors explicit steps because they might mess up. You give seniors autonomy because they'll find the better path.
+
+### Building for the Future
+
+Building with Agent SDK now is a **forward-thinking architectural bet**:
+- You're trading some current-state optimization for future flexibility
+- As AI improves, your architecture improves automatically
+- No graph refactoring needed when capabilities increase
+
+The question isn't "which is better?" but "which is the right long-term bet?"

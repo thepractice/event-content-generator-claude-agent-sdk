@@ -2,13 +2,10 @@
 
 ## The Experiment
 
-I built a marketing content agent with maximum autonomy using the Claude Agent SDK architecture:
+Built a marketing content agent with maximum autonomy using the Claude Agent SDK architecture:
 - **Skills** for domain expertise (markdown files in `.claude/skills/`)
-- **MCP** for custom tools (proper extensibility pattern)
-- **Hooks** for observability and guardrails
-- **Host Runner** for invariant enforcement
-
-The agent had tools and a goal. I observed what it did without forcing any particular process.
+- **MCP** for custom tools (retrieve, critique, verify, images, save)
+- **Host Runner** for invariant enforcement (max iterations, schema validation)
 
 ---
 
@@ -17,174 +14,134 @@ The agent had tools and a goal. I observed what it did without forcing any parti
 ### What Worked Well
 
 **Skills**:
-- [ ] Agent read and followed the SOP skill
-- [ ] Brand voice guidelines influenced content tone
-- [ ] Channel rules were respected
-- [ ] Verification rules were applied
+- [x] Agent read and followed the SOP skill
+- [x] Brand voice guidelines influenced content tone
+- [x] Channel rules were respected
+- [x] Verification rules were applied
 
 **MCP Tools**:
-- [ ] `retrieve_context` was called for grounding
-- [ ] `critique_draft` was used for self-evaluation
-- [ ] `verify_claims` was called before submission
-- [ ] `generate_images` was executed after content
-
-**Hooks**:
-- [ ] PreToolUse successfully blocked unwanted tools
-- [ ] PostToolUse captured full audit trail
-- [ ] WebSearch guard worked as expected
+- [x] `retrieve_context` was called for grounding
+- [x] `critique_draft` was used for self-evaluation
+- [x] `verify_claims` was called before submission
+- [x] `generate_images` was executed after content
+- [x] `save_output` bundled everything correctly
 
 **Host Runner**:
-- [ ] Iteration cap prevented infinite loops
-- [ ] Schema validation caught malformed outputs
-- [ ] Unverified claims triggered re-runs
+- [x] Iteration cap prevented infinite loops
+- [x] Schema validation caught malformed outputs
+- [x] Unverified claims triggered re-runs
 
 ### What Needed Improvement
 
-*Document issues encountered during testing*
+1. **Skills aren't observable** - Unlike tool calls, skill "usage" isn't logged as discrete events. Skills are loaded as context, not invoked. We added a `skills_loaded` notification to show which skills were available.
+
+2. **MCP subprocess env vars** - API keys weren't automatically passed to the MCP subprocess. Had to explicitly pass `GEMINI_API_KEY` in the `mcp_servers` env config.
+
+3. **Image generation SDK** - Initial implementation used older `google.generativeai` SDK. Had to update to `google.genai` with `gemini-2.5-flash-image` model to match the working LangGraph version.
 
 ---
 
-## Patterns Observed
+## Key Framing: Orchestrated vs Autonomous
 
-### Tool Sequence
+The best way to describe the difference:
 
-*What was the typical order?*
+| Frame | LangGraph | Claude Agent SDK |
+|-------|-----------|------------------|
+| **Orchestrated vs Autonomous** | You orchestrate | Agent decides |
+| **Explicit vs Emergent** | You define the graph | Workflow emerges |
+| **Procedural vs Goal-oriented** | "Do these steps" | "Achieve this goal" |
 
-Example: `retrieve_context(brand) → retrieve_context(product) → [drafting] → critique_draft → verify_claims → generate_images → save_output`
+**The one-liner:** LangGraph defines **how**. Agent SDK defines **what**.
 
-Did it vary? When?
-
-### Retrieval Behavior
-
-- Did agent retrieve first? [ ] Always / [ ] Usually / [ ] Sometimes / [ ] Never
-- Did it retrieve both brand AND product context?
-- How many retrieval calls per generation?
-
-### Self-Critique
-
-- How often did agent call critique_draft?
-- Did it iterate on low scores?
-- What triggered revisions?
-
-### Claim Verification
-
-- Did agent call verify_claims?
-- How did it handle unsupported claims?
-- Did the host runner catch any missed verifications?
-
-### Image Generation
-
-- When did agent generate images? Before or after verification?
-- Quality of generated images?
+**Who decides the workflow?** That's the fundamental question.
 
 ---
 
-## Surprises
+## The Long-Term Bet
 
-*What did the agent do that you didn't expect?*
+### Why LangGraph is Better Today (for defined workflows)
+- More reliable and predictable
+- Better observability (every node traced)
+- Lower cost (no reasoning about "what next")
+- Easier debugging
 
-1.
-2.
-3.
+### Why Agent SDK Wins Long-Term
 
----
+Today's LangGraph advantages are **temporary limitations**, not fundamental truths:
+- AI reasoning cost will decrease
+- AI reliability will increase
+- AI will eventually optimize better than human-drawn graphs
 
-## Comparison to LangGraph Version
+When AI becomes smarter:
+1. **Dynamic optimization**: Agent adapts workflow to context
+2. **Emergent strategies**: Agent discovers approaches humans wouldn't graph
+3. **The graph becomes a ceiling**: If AI > human who drew graph, graph limits potential
 
-| Aspect | LangGraph | Claude Agent SDK (Skills + MCP) |
-|--------|-----------|--------------------------------|
-| Process consistency | Deterministic | Emergent, mostly consistent |
-| Token usage | ~X tokens | ~Y tokens |
-| Quality | Score avg: X | Score avg: Y |
-| Flexibility | Low | High |
-| Developer experience | Explicit control | Trust + observe |
-| Debugging | LangSmith traces | Audit logs + hooks |
-| Extensibility | Add nodes | Add skills + MCP tools |
-
----
-
-## Autonomy Observations
-
-### When Agent Made Good Decisions
-
-*Document cases where autonomous behavior was beneficial*
-
-### When Agent Needed Guidance
-
-*Document cases where prompting or host enforcement was necessary*
-
-### The Autonomy/Reliability Tradeoff
-
-*Your conclusions about trusting agents vs. explicit control*
+### The Analogy
+- **LangGraph** = Instructions for a junior developer (guardrails)
+- **Agent SDK** = Goals for a senior developer (autonomy)
 
 ---
 
-## Key Learnings
+## UI Learnings
 
-### 1. Skills Shape Behavior
+### Realtime Progress Updates
 
-*How effective was the skills approach?*
+Implemented progress callbacks to show agent activity:
+- `started` - Agent begins
+- `skills_loaded` - Which skills are available
+- `tool_call` - Each MCP tool invocation
+- `reasoning` - Agent's thinking (truncated)
+- `validation` - Quality check results
+- `completed` - Agent finishes
 
-### 2. MCP Provides Capabilities
+Key insight: Progress must persist after completion. Used `st.session_state.progress_log` to keep updates visible.
 
-*How well did the MCP tools work?*
+### Optimal UI for Marketing Teams
 
-### 3. Hooks Enable Guardrails
+| UI | Best For |
+|---|---|
+| **Slack bot** | Quick requests, no context switch |
+| **Web app** | Full creation, editing, review |
+| **Google Docs** | Stakeholder collaboration |
+| **API** | Marketing automation integration |
 
-*How useful were PreToolUse and PostToolUse hooks?*
+Terminal UI is wrong for marketers - they're not developers.
 
-### 4. Host Enforcement is Essential
+---
 
-*Why the iteration cap and validation layer mattered*
+## Comparison Summary
+
+| Aspect | LangGraph | Claude Agent SDK |
+|--------|-----------|------------------|
+| **Philosophy** | "Tell the system what to do" | "Tell the agent what to achieve" |
+| **Control** | Explicit + deterministic | Trust + verify |
+| **Flexibility** | Low (graph is fixed) | High (agent adapts) |
+| **Predictability** | High | Medium |
+| **Future trajectory** | Static | Improves with AI |
 
 ---
 
 ## Recommendations
 
-### When to Use This Architecture
+### Use Agent SDK When:
+- Exploratory/creative tasks
+- Workflow isn't fully defined
+- Betting on AI improvement
+- Rapid prototyping
 
-- [ ] Exploratory/creative tasks
-- [ ] Flexible workflows
-- [ ] Rapid prototyping
-- [ ] When agent reasoning is valuable
+### Use LangGraph When:
+- Compliance-critical workflows
+- Guaranteed execution order required
+- Deterministic behavior essential
+- Cost optimization critical
 
-### When to Use LangGraph Instead
+### The Right Question
 
-- [ ] Compliance-critical workflows
-- [ ] Guaranteed step execution
-- [ ] Deterministic behavior required
-- [ ] Strict audit requirements
+Not "which is better?" but "which is the right long-term bet?"
 
----
-
-## Interview Narrative
-
-> "I built a marketing agent using the Claude Agent SDK with the optimal 2026 architecture: Skills for domain expertise, MCP for custom tools, Hooks for guardrails.
->
-> Skills are markdown files that encode brand voice, channel rules, and verification policy. The agent reads these automatically. MCP is how you extend the SDK with custom tools — I built a server exposing RAG retrieval, quality scoring, and claim verification.
->
-> The host runner enforces invariants the agent might miss: max iterations, schema validation, and no-unverified-claims. This is the trust-but-verify approach.
->
-> Compared to LangGraph: the SDK approach is more autonomous and feels like working with a capable colleague. LangGraph gives you explicit control over every step. Both have their place — SDK for exploration, LangGraph for compliance-critical workflows.
->
-> The real skill is knowing which approach fits which problem."
+Building with Agent SDK now trades current-state optimization for future flexibility. As AI improves, your architecture improves automatically.
 
 ---
 
-## Metrics Summary
-
-| Metric | Value |
-|--------|-------|
-| Test runs | |
-| Avg iterations | |
-| Avg tool calls | |
-| Success rate | |
-| Avg brand voice score | |
-| Avg CTA clarity score | |
-| Claims verified | |
-| Images generated | |
-| Total tokens (avg) | |
-
----
-
-*Last updated: YYYY-MM-DD*
+*Last updated: 2026-01-08*

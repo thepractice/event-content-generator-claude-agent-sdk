@@ -20,6 +20,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# ============================================================================
+# Model Configuration
+# ============================================================================
+
+# Default to Sonnet for cost/speed balance, can override with CLAUDE_MODEL env var
+DEFAULT_MODEL = "claude-sonnet-4-20250514"
+CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", DEFAULT_MODEL)
+
 
 # ============================================================================
 # Audit Log
@@ -127,6 +135,9 @@ async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = No
 
     # Configure agent options following the quickstart pattern
     options = ClaudeAgentOptions(
+        # Model to use (configurable via CLAUDE_MODEL env var)
+        model=CLAUDE_MODEL,
+
         # Tools the agent can use (including MCP tools explicitly)
         allowed_tools=[
             "Read",
@@ -176,6 +187,9 @@ async def run_brandguard(event_brief: Dict[str, Any], on_progress: callable = No
             on_progress(event_type, data)
 
     notify("started", {"event_title": event_brief.get("event_title", "")})
+
+    # Log model being used
+    audit_log["model"] = CLAUDE_MODEL
 
     # Notify about loaded skills and add to audit log
     if available_skills:
